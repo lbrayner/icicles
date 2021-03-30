@@ -4,11 +4,11 @@
 ;; Description: Change logs for Icicles libraries.
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 2007-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 2007-2021, Drew Adams, all rights reserved.
 ;; Created: Tue Nov 27 07:47:53 2007
-;; Last-Updated: Mon Apr  2 07:52:37 2018 (-0700)
+;; Last-Updated: Wed Mar 17 13:57:05 2021 (-0700)
 ;;           By: dradams
-;;     Update #: 11837
+;;     Update #: 11915
 ;; URL: https://www.emacswiki.org/emacs/download/icicles-chg.el
 ;; Doc URL: https://www.emacswiki.org/emacs/Icicles
 ;; Keywords: extensions, help, abbrev, local, minibuffer,
@@ -85,6 +85,18 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles-cmd1.el'")
 ;;
+;; 2019/09/21 dadams
+;;     icicle-bbdb-complete-mail: Updated for BBDB v3.2.
+;;       Hash-table predicate for all-completions needs to be binary.
+;;       And the hash table now holds string keys, not symbol keys.
+;; 2018/09/21 dadams
+;;     icicle-bbdb-complete-name, icicle-bookmark-jump-1, icicle-buffer(-no-search)
+;;       icicle-visit-marked-file-of-content-1:
+;;         Use icicle--pop-to-buffer-same-window, not switch-to-buffer.
+;; 2018/06/29 dadams
+;;     icicle-pp-eval-expression: Ensure not just (boundp 'lexical-binding) but also Emacs 24+.
+;; 2018/06/21 dadams
+;;     Added: icicle-delete-window-by-name.
 ;; 2018/03/02 dadams
 ;;     icicle-buffer: Updated doc string for C-x i -|+.
 ;; 2018/02/13 dadams
@@ -1202,6 +1214,31 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles-cmd2.el'")
 ;;
+;; 2021/03/17 dadams
+;;      Use buffer-string, not buffer-substring, for whole buffer.
+;; 2020/11/05 dadams
+;;     icicle-color-completion-setup: 
+;;       Wrap soft-require of palette in condition-case to ignore error hard-requiring vline.el.
+;; 2020/10/16 dadams
+;;     icicle-describe-package: Updated for Emacs 25+ (sync with help-fns+.el).
+;; 2020/08/14 dadams
+;;     icicle-search-define-candidates, icicle-char-properties-in-buffers:
+;;       bookmark-jump-noselect is obsolete.
+;;     icicle-add-key+cmd: generic-char-p is obsolete.
+;;     icicle-font: Typo in doc string: non-nil -> nil.
+;; 2020/02/03 dadams
+;;     icicle-search-read-context-regexp: Use icicle-read-number if available.
+;; 2020/01/20 dadams
+;;     icicle-search-thing-scan:
+;;       Fix off-by-1 hack to handle vanilla thing-at-point, which returns thing even if before point.
+;; 2019/06/09 dadams
+;;     icicle-next-font-lock-keywords-repeat:
+;;       Removed require of repeat.el (in icicle-repeat-command now).
+;; 2018/10/15 dadams
+;;     icicle-choose-candidate-of-type: Bind icicle-sort-comparer and icicle-buffer-completing-p.
+;;                                      Do not use icicle-buffer-sort-first-time-p.
+;; 2018/09/09 dadams
+;;     icicle-Info-goto-node-1: Test numeric, not raw, prefix arg with natnump.
 ;; 2017/02/01 dadams
 ;;     Added: icicle-woman.
 ;; 2017/01/31 dadams
@@ -2162,6 +2199,8 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles-face.el'")
 ;;
+;; 2020/11/12 dadams
+;;     Added soft-require of hexrgb.el (but not really needed).
 ;; 2014/10/19 dadams
 ;;     icicle-historical-candidate-other: Updated doc string for icicle-Info-highlight-visited-nodes.
 ;; 2013/07/07 dadams
@@ -2298,6 +2337,29 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles-fn.el'")
 ;;
+;; 2021/03/17 dadams
+;;      Use buffer-string, not buffer-substring, for whole buffer.
+;; 2021/01/25 dadams
+;;     icicle-scatter-re: Use version of make-obsolete that's compatible with all Emacs versions.
+;; 2020/11/05 dadams
+;;     icicle-read-face-name:
+;;       Wrap soft-require of palette in condition-case to ignore error hard-requiring vline.el.
+;; 2020/08/14 dadams
+;;     icicle-display-completion-list: Use help-print-return-message, not print-help-return-message.
+;; 2020/02/04 dadams
+;;     icicle-read-number:
+;;       Updated for Emacs 27+.  Added HIST arg (default read-number-history).  Thx to Tino Calancha.
+;; 2020/01/12 dadams
+;;     icicle-fit-completions-window: Fix last change, for Emacs 20.
+;; 2020/01/03 dadams
+;;     icicle-fit-completions-window: Do not text-scale if terminal Emacs.  Thx to Ron Parker.
+;; 2019/06/09 dadams
+;;     icicle-repeat-command: Same as in zz-repeat-command in zones.el now.
+;; 2018/09/21 dadams
+;;     Added: icicle--pop-to-buffer-same-window.
+;;     icicle-try-switch-buffer: Use icicle--pop-to-buffer-same-window.
+;; 2018/06/01 dadams
+;;     icicle-filter-wo-input: Protect against improper default value passed to completing-read.
 ;; 2018/03/03 dadams
 ;;     icicle-delete-dups: defalias the symbol, not its symbol-function (dunno why I did the latter).
 ;; 2018/02/13 dadams
@@ -4416,6 +4478,13 @@
 ;;       macros needs to be byte-compiled anew after loading the updated macros.
 ;; ****************************************************************************************************
 ;;
+;; 2018/10/15 dadams
+;;     icicle-buffer-bindings, icicle-file-bindings:
+;;       Always set icicle-sort-comparer to icicle-(buffer|file)-sort.
+;;       Do not use icicle-(buffer|file)-sort-first-time-p.
+;; 2018/06/01 dadams
+;;     icicle-(buffer|file)-bindings:
+;;       Bind icicle-sort-comparer, since set it to icicle-(buffer|file)-sort.
 ;; 2017/12/10 dadams
 ;;     icicle-buffer-bindings:
 ;;       Bind icicle-pref-arg and use it, not current-prefix-arg.
@@ -4678,6 +4747,30 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles-mcmd.el'")
 ;;
+;; 2021/03/17 dadams
+;;      Use buffer-string, not buffer-substring, for whole buffer.
+;; 2020/08/14 dadams
+;;     icicle-help-string-completion: mouse-choose-completion is obsolete (removed).
+;;     icicle-choose-completion, icicle-current-completion-in-Completions,
+;;       icicle-mouse-candidate-read-fn-invoke, icicle-Completions-mouse-3-menu,
+;;       icicle-mouse-save/unsave-candidate: completion-base-size is obsolete (removed).
+;; 2020/02/03 dadams
+;;     icicle-candidate-set-truncate: Use icicle-read-number if available.
+;; 2019/12/10 dadams
+;;     icicle-change-sort-order: Changed indication of default value in prompt: NOW was misleading.
+;; 2019/06/15 dadams
+;;     icicle-abort-recursive-edit:
+;;       Call 1on1-fit-minibuffer-frame with RESETP arg only if (= (minibuffer-depth) 1)
+;;     icicle-delete-windows-on: At the end, refocus and select the originally selected frame.
+;; 2018/10/17 dadams
+;;     icicle-change-sort-order: Last occurrence of ORDER-NAMES should be icicle-sort-orders-alist.
+;; 2018/10/15 dadams
+;;     icicle-change-sort-order:
+;;       Use original icicle-sort-orders-alist (local var ORDERS) for candidates, before changing it.
+;;       Pass ORDERS to icicle-current-sort-functions.
+;;       For completion: Bind icicle-sort-comparer to a string comparison only.
+;;                       Bind icicle-sort-orders-alist to nil - provide no change in sort order.
+;;     icicle-current-sort-functions: Added optional arg ORDERS-ALIST.
 ;; 2018/04/02 dadams
 ;;     icicle-sit-for, 3rd cond clause: do it also if defining-kbd-macro.
 ;;       Thx to Charles Roelli.  Same fix as for Emacs bug#21329.
@@ -8800,6 +8893,13 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles-var.el'")
 ;;
+;; 2020/12/05 dadams
+;;     icicle-re-no-dot:
+;;       Changed value to be that of directory-files-no-dot-files-regexp.  See comment in code.
+;;       This value is OK for use by directory-files, at least.
+;;       See https://lists.gnu.org/archive/html/emacs-devel/2020-04/msg00764.html and followups.
+;; 2018/10/15 dadams
+;;     Removed icicle-(buffer|file)-sort-first-time-p.
 ;; 2018/02/13 dadams
 ;;     Removed (Emacs 23-25 only now): icicle-read-char-history.
 ;; 2017/12/10 dadams
@@ -9282,6 +9382,10 @@
  
 ;;;(@* "CHANGE LOG FOR `icicles.el'")
 ;;
+;; 2020/01/03 dadams
+;;     Version 2020.01.04
+;; 2018/10/15 dadams
+;;     Version 2018.10.15.
 ;; 2018/02/13 dadams
 ;;     Version 2018.02.13.
 ;; 2018/01/15 dadams

@@ -4,11 +4,11 @@
 ;; Description: Non-interactive functions for Icicles
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 1996-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 1996-2021, Drew Adams, all rights reserved.
 ;; Created: Mon Feb 27 09:25:53 2006
-;; Last-Updated: Sat Mar  3 09:39:04 2018 (-0800)
+;; Last-Updated: Wed Mar 17 13:35:50 2021 (-0700)
 ;;           By: dradams
-;;     Update #: 15280
+;;     Update #: 15304
 ;; URL: https://www.emacswiki.org/emacs/download/icicles-fn.el
 ;; Doc URL: https://www.emacswiki.org/emacs/Icicles
 ;; Keywords: internal, extensions, help, abbrev, local, minibuffer,
@@ -17,16 +17,24 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;   `apropos', `apropos+', `apropos-fn+var', `avoid', `bookmark',
-;;   `bookmark+', `bookmark+-1', `bookmark+-bmu', `bookmark+-key',
-;;   `bookmark+-lit', `cl', `cus-theme', `el-swank-fuzzy', `ffap',
-;;   `ffap-', `fit-frame', `flx', `frame-fns', `fuzzy',
-;;   `fuzzy-match', `help+20', `hexrgb', `icicles-opt',
-;;   `icicles-var', `info', `info+20', `kmacro', `levenshtein',
-;;   `menu-bar', `menu-bar+', `misc-cmds', `misc-fns', `naked',
-;;   `package', `pp', `pp+', `second-sel', `strings', `thingatpt',
-;;   `thingatpt+', `unaccent', `w32browser-dlgopen', `wid-edit',
-;;   `wid-edit+', `widget'.
+;;   `apropos', `apropos+', `apropos-fn+var', `auth-source', `avoid',
+;;   `backquote', `bookmark', `bookmark+', `bookmark+-1',
+;;   `bookmark+-bmu', `bookmark+-key', `bookmark+-lit', `button',
+;;   `bytecomp', `cconv', `cl', `cl-generic', `cl-lib', `cl-macs',
+;;   `cmds-menu', `col-highlight', `crosshairs', `cus-edit',
+;;   `cus-face', `cus-load', `cus-start', `cus-theme', `eieio',
+;;   `eieio-core', `eieio-loaddefs', `el-swank-fuzzy', `epg-config',
+;;   `ffap', `ffap-', `fit-frame', `flx', `font-lock', `font-lock+',
+;;   `frame-fns', `fuzzy', `fuzzy-match', `gv', `help+', `help-fns',
+;;   `help-fns+', `help-macro', `help-macro+', `help-mode', `hexrgb',
+;;   `hl-line', `hl-line+', `icicles-opt', `icicles-var', `info',
+;;   `info+', `kmacro', `levenshtein', `macroexp', `menu-bar',
+;;   `menu-bar+', `misc-cmds', `misc-fns', `naked', `package',
+;;   `password-cache', `pp', `pp+', `radix-tree', `replace',
+;;   `second-sel', `seq', `strings', `syntax', `tabulated-list',
+;;   `text-mode', `thingatpt', `thingatpt+', `url-handlers',
+;;   `url-parse', `url-vars', `vline', `w32browser-dlgopen',
+;;   `wid-edit', `wid-edit+', `widget'.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -48,7 +56,8 @@
 ;;
 ;;  Non-interactive functions defined here:
 ;;
-;;    `assq-delete-all', `icicle-2nd-part-string-less-p',
+;;    `assq-delete-all', `icicle--pop-to-buffer-same-window',
+;;    `icicle-2nd-part-string-less-p',
 ;;    `icicle-abbreviate-or-expand-file-name',
 ;;    `icicle-alist-key-match', `icicle-all-completions',
 ;;    `icicle-alpha-p', `icicle-alt-act-fn-for-type',
@@ -440,7 +449,7 @@
   ;; icicle-default-value, icicle-list-join-string, icicle-mark-position-in-candidate,
   ;; icicle-point-position-in-candidate, icicle-regexp-quote-flag, icicle-require-match-flag,
   ;; icicle-shell-command-candidates-cache, icicle-show-Completions-help-flag, icicle-sort-comparer,
-  ;; icicle-sort-orders-alist, icicle-special-candidate-regexp, icicle-transform-function,
+  ;; icicle-special-candidate-regexp, icicle-transform-function,
   ;; icicle-use-~-for-home-dir-flag
 
 (require 'icicles-var)
@@ -1986,9 +1995,11 @@ This binds variable `icicle-buffer-name-input-p' to non-nil."
   (unless (fboundp 'icicle-ORIG-read-number)
     (defalias 'icicle-ORIG-read-number (symbol-function 'read-number)))
 
-  (defun icicle-read-number (prompt &optional default)
+  (defun icicle-read-number (prompt &optional default hist)
     "Read a number in the minibuffer, prompting with PROMPT (a string).
 DEFAULT is returned if the user hits `RET' without typing anything.
+HIST is a history list variable, passed to `completing-read'.  It
+ defaults to `read-number-history' (Emacs 27+).
 
 If option `icicle-add-proxy-candidates-flag' is non-nil, the user can
 also enter the name of a numeric variable - its value is returned.
@@ -2023,7 +2034,9 @@ whose value or whose custom type is compatible with type `integer',
                                 "[ \t]*\\'" (format " (default %s) " default1) prompt t t)))))
            (when icicle-proxy-candidates (put-text-property 0 1 'icicle-fancy-candidates t prompt))
            (while (progn
-                    (let ((str  (completing-read prompt nil nil nil nil nil
+                    (let ((str  (completing-read prompt nil nil nil nil
+                                                 (or hist  (and (boundp 'read-number-history)
+                                                                'read-number-history))
                                                  (if (consp default)
                                                      (mapcar #'number-to-string default)
                                                    (and default1  (number-to-string default1)))))
@@ -2571,7 +2584,7 @@ A face-name variable is a variable with custom-type `face'.
 
 If library `palette.el' or `eyedropper.el' is used, then you can also
 choose proxy candidate `*point face name*' to use the face at point."
-         (or (require 'palette nil t)  (require 'eyedropper nil t))
+         (or (condition-case nil (require 'palette nil t) (error nil))  (require 'eyedropper nil t))
          (let ((faceprop       (or (get-char-property (point) 'read-face-name)
                                    (get-char-property (point) 'face)))
                (aliasfaces     ())
@@ -2695,7 +2708,7 @@ A face-name variable is a variable with custom-type `face'.
 
 If library `palette.el' or `eyedropper.el' is used, then you can also
 choose proxy candidate `*point face name*' to use the face at point."
-         (or (require 'palette nil t)  (require 'eyedropper nil t))
+         (or (condition-case nil (require 'palette nil t) (error nil))  (require 'eyedropper nil t))
          (when (and default  (not (stringp default)))
            (setq default  (cond ((symbolp default) (symbol-name default))
                                 (multiple (mapconcat (lambda (fc) (if (symbolp fc) (symbol-name fc) fc))
@@ -3531,11 +3544,12 @@ Non-nil optional third arg NB-CANDS is the length of COMPLETIONS."
             (insert cand-intro-string)))
         ;; $$$$$$$$ Emacs 23 nonsense.  Revisit this when Stefan finally removes that crud.
         ;; This is done in Emacs 23 `display-completion-list'.
-        (when (and completions  (fboundp 'completion-all-sorted-completions)) ; Emacs 23
+        (when (and completions  (fboundp 'completion-all-sorted-completions))
           (let ((last  (last completions)))
-            ;; Set base-size from the tail of the list.
-            (set (make-local-variable 'completion-base-size)
-                 (or (cdr last)  (and (minibufferp mainbuf)  0)))
+            ;; Set `completion-base-size' from the tail of the list.
+            (when (boundp 'completion-base-size)
+              (set (make-local-variable 'completion-base-size)
+                   (or (cdr last)  (and (minibufferp mainbuf)  0))))
             (setcdr last nil)))         ; Make completions a properly nil-terminated list.
         (icicle-insert-candidates completions nb-cands)))
     ;; In vanilla Emacs < 23, the hook is run with `completion-common-substring' bound to
@@ -3705,8 +3719,9 @@ Window fitting is available only for Emacs 24+, because
 windows).
 
 Text size scaling uses `icicle-Completions-text-scale-decrease' and is
-available only for Emacs 23+.  (No scaling in any case if using
-`oneonone.el' with a `*Completions*' frame.)."
+available only for graphic displays (GUI, not terminal, Emacs) with
+Emacs 23+.  (No scaling in any case if using `oneonone.el' with a
+`*Completions*' frame.)."
   (unless (or (eq arg 'scale-only)
               (= emacs-major-version 23) ; `fit-window-to-buffer' is broken before 24: removes windows.
               (= emacs-major-version 22))
@@ -3718,7 +3733,8 @@ available only for Emacs 23+.  (No scaling in any case if using
            (or (icicle-get-safe icicle-last-top-level-command 'icicle-Completions-window-max-height)
                icicle-Completions-window-max-height))))))
   (unless (eq arg 'fit-only)
-    (when (and (boundp 'icicle-Completions-text-scale-decrease) ; Emacs 23+
+    (when (and (if (fboundp 'display-graphic-p) (display-graphic-p) window-system) ; Not terminal Emacs
+               (boundp 'icicle-Completions-text-scale-decrease) ; Emacs 23+
                (eq major-mode 'completion-list-mode)
                (or (not (boundp '1on1-*Completions*-frame-flag))  (not 1on1-*Completions*-frame-flag)))
       (text-scale-decrease icicle-Completions-text-scale-decrease))))
@@ -4255,7 +4271,9 @@ characters.  For example, STRING = \"ure\" matches COMPLETION
 
 
 (defalias 'icicle-scatter 'icicle-scatter-re)
-(make-obsolete 'icicle-scatter 'icicle-scatter-re) ; 2018-01-14
+(if (< emacs-major-version 23)
+    (make-obsolete 'icicle-scatter 'icicle-scatter-re) ; 2018-01-14
+  (make-obsolete 'icicle-scatter 'icicle-scatter-re "2018-01-14"))
 
 (defun icicle-scatter-re (string)
   "Returns a regexp that matches a scattered version of STRING.
@@ -4368,12 +4386,16 @@ If LEN is nil, treat it as the length of STRING."
 
 ;;; Icicles Functions - Common Helper Functions ----------------------
 
+(if (fboundp 'pop-to-buffer-same-window)
+    (defalias 'icicle--pop-to-buffer-same-window 'pop-to-buffer-same-window)
+  (defalias 'icicle--pop-to-buffer-same-window 'switch-to-buffer))
+
 (defun icicle-try-switch-buffer (buffer)
   "Try to switch to BUFFER, first in same window, then in other window.
 If the selected window already shows BUFFER, then do nothing."
   (when (and (buffer-live-p buffer)  (not icicle-inhibit-try-switch-buffer))
     (condition-case err-switch-to
-        (unless (eq (window-buffer) buffer) (switch-to-buffer buffer))
+        (unless (eq (window-buffer) buffer) (icicle--pop-to-buffer-same-window buffer))
       (error (and (string= "Cannot switch buffers in minibuffer window"
                            (error-message-string err-switch-to))
                   ;; Try another window.  Don't bother if the buffer to switch to is a minibuffer.
@@ -4929,7 +4951,7 @@ environment vars by their values.
 The current buffer must be a minibuffer."
   (let ((input  (if (fboundp 'minibuffer-contents)
                     (minibuffer-contents) ; e.g. Emacs 22
-                  (buffer-substring (point-min) (point-max))))) ; e.g. Emacs 20
+                  (buffer-string)))) ; e.g. Emacs 20
     ;; $$$$$$$$ (if (fboundp 'minibuffer-contents-no-properties)
     ;;              (minibuffer-contents-no-properties) ; e.g. Emacs 22
     ;;            (buffer-substring-no-properties (point-min) (point-max))))) ; e.g. Emacs 20
@@ -5073,7 +5095,8 @@ This filtering does not affect proxy candidates or extra candidates.
 See also variable `icicle-must-pass-after-match-predicate', which is
 similar to `icicle-must-pass-predicate' but is used after filtering
 using the user input."
-  (and (not (string= "" candidate))     ; Filter out empty strings.
+  (and (stringp candidate)              ; Protect against improper default value passed to `completing-read'.
+       (not (string= "" candidate))     ; Filter out empty strings.
        (or (not icicle-must-match-regexp)  (icicle-string-match-p icicle-must-match-regexp candidate))
        (or (not icicle-must-not-match-regexp)
            (not (icicle-string-match-p icicle-must-not-match-regexp candidate)))
@@ -5960,11 +5983,13 @@ nil."
         (setq pos  (1+ pos)))
       nil)))
 
-;; Same as `bmkp-repeat-command' in `bookmark+-1.el'.
+;; Same as `zz-repeat-command' in `zones.el'.
 (defun icicle-repeat-command (command)
   "Repeat COMMAND."
-  (let ((repeat-message-function  'ignore))
-    (setq last-repeatable-command  command)
+  (require 'repeat)          ; Define its vars before we let-bind them.
+  (let ((repeat-previous-repeated-command  command)
+        (repeat-message-function           #'ignore)
+        (last-repeatable-command           'repeat))
     (repeat nil)))
 
 (defvar icicle-dirs-done ()

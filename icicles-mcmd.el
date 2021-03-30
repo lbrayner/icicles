@@ -4,11 +4,11 @@
 ;; Description: Minibuffer commands for Icicles
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 1996-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 1996-2021, Drew Adams, all rights reserved.
 ;; Created: Mon Feb 27 09:25:04 2006
-;; Last-Updated: Mon Apr  2 07:49:06 2018 (-0700)
+;; Last-Updated: Wed Mar 17 13:51:19 2021 (-0700)
 ;;           By: dradams
-;;     Update #: 19857
+;;     Update #: 19882
 ;; URL: https://www.emacswiki.org/emacs/download/icicles-mcmd.el
 ;; Doc URL: https://www.emacswiki.org/emacs/Icicles
 ;; Keywords: internal, extensions, help, abbrev, local, minibuffer,
@@ -17,17 +17,28 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;   `apropos', `apropos+', `apropos-fn+var', `avoid', `bookmark',
-;;   `bookmark+', `bookmark+-1', `bookmark+-bmu', `bookmark+-key',
-;;   `bookmark+-lit', `cl', `cus-theme', `doremi', `el-swank-fuzzy',
-;;   `ffap', `ffap-', `fit-frame', `flx', `frame-fns', `fuzzy',
-;;   `fuzzy-match', `help+20', `hexrgb', `icicles-fn', `icicles-opt',
-;;   `icicles-var', `image-dired', `info', `info+20', `isearch+',
-;;   `kmacro', `levenshtein', `menu-bar', `menu-bar+', `misc-cmds',
-;;   `misc-fns', `mouse3', `mwheel', `naked', `package', `pp', `pp+',
-;;   `ring', `second-sel', `strings', `thingatpt', `thingatpt+',
-;;   `unaccent', `w32browser-dlgopen', `wid-edit', `wid-edit+',
-;;   `widget'.
+;;   `apropos', `apropos+', `apropos-fn+var', `auth-source', `avoid',
+;;   `backquote', `bookmark', `bookmark+', `bookmark+-1',
+;;   `bookmark+-bmu', `bookmark+-key', `bookmark+-lit', `button',
+;;   `bytecomp', `cconv', `cl', `cl-generic', `cl-lib', `cl-macs',
+;;   `cmds-menu', `col-highlight', `color', `crosshairs', `cus-edit',
+;;   `cus-face', `cus-load', `cus-start', `cus-theme', `custom',
+;;   `dired', `dired-loaddefs', `doremi', `easymenu', `eieio',
+;;   `eieio-core', `eieio-loaddefs', `el-swank-fuzzy', `epg-config',
+;;   `ffap', `ffap-', `fit-frame', `flx', `font-lock', `font-lock+',
+;;   `format-spec', `frame-fns', `fuzzy', `fuzzy-match', `gv',
+;;   `help+', `help-fns', `help-fns+', `help-macro', `help-macro+',
+;;   `help-mode', `hexrgb', `highlight', `hl-line', `hl-line+',
+;;   `icicles-fn', `icicles-opt', `icicles-var', `image',
+;;   `image-dired', `image-mode', `info', `info+', `isearch+',
+;;   `isearch-prop', `kmacro', `levenshtein', `macroexp', `menu-bar',
+;;   `menu-bar+', `misc-cmds', `misc-fns', `mouse3', `mwheel',
+;;   `naked', `package', `password-cache', `pp', `pp+', `radix-tree',
+;;   `replace', `ring', `second-sel', `seq', `strings', `syntax',
+;;   `tabulated-list', `text-mode', `thingatpt', `thingatpt+',
+;;   `timer', `url-handlers', `url-parse', `url-vars', `vline',
+;;   `w32browser-dlgopen', `wid-edit', `wid-edit+', `widget',
+;;   `zones'.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -706,7 +717,7 @@ Return the number of the candidate: 0 for first, 1 for second, ..."
       (run-hooks 'mouse-leave-buffer-hook)
       (with-current-buffer (window-buffer (posn-window (event-start event)))
         (let ((buffer           completion-reference-buffer)
-              (base-size        completion-base-size)
+              (base-size        (or (and (boundp 'completion-base-size)  completion-base-size)  0))
               (choice
                (save-excursion
                  (goto-char (posn-point (event-start event)))
@@ -2008,65 +2019,70 @@ minibuffer invocation because there are more candidates than
 The newly chosen sort order takes effect only when sorting is turned
 on again (e.g. because there are fewer candidates)."
   (interactive "P")
-  (setq icicle-sort-orders-alist  (delq nil icicle-sort-orders-alist)) ; Purge any nil entries.
-  (if (and (interactive-p)  icicle-inhibit-sort-p)
-      (icicle-msg-maybe-in-minibuffer "Cannot sort candidates now")
-    (if (and arg  (not (consp arg)))
-        (icicle-reverse-sort-order)
-      (let* ((following-order   nil)
-             (use-completion-p  (if (integerp icicle-change-sort-order-completion)
-                                    (> (length (icicle-current-sort-functions))
-                                       icicle-change-sort-order-completion)
-                                  icicle-change-sort-order-completion))
-             (use-completion-p  (or (and (not arg)  use-completion-p) ; Use completion.
-                                    (and arg        (not use-completion-p))))
-             next-order)
-        (cond (use-completion-p
-               (setq next-order  (let ((icicle-whole-candidate-as-text-prop-p   nil)
-                                       (icicle-must-pass-after-match-predicate  nil)
-                                       (icicle-show-Completions-initially-flag  t)
-                                       (enable-recursive-minibuffers            t)
-                                       (icicle-default-value                    t) ; Put current in prompt.
-                                       (icicle-default-in-prompt-format-function
-                                        (lambda (def) (format " (NOW: %s)" def))))
-                                   (save-selected-window
-                                     (completing-read
-                                      (format "New %ssort order: " (if alternativep "alternative " ""))
-                                      (icicle-current-sort-functions)
-                                      nil t nil nil
-                                      (car (rassoc (if alternativep
-                                                       icicle-alternative-sort-comparer
-                                                     icicle-sort-comparer)
-                                                   icicle-sort-orders-alist))))))
-               (when (if alternativep icicle-alternative-sort-comparer icicle-sort-comparer)
-                 (setq icicle-last-sort-comparer  (if alternativep ; Save current as last.
-                                                      icicle-alternative-sort-comparer
-                                                    icicle-sort-comparer)))
-               (set (if alternativep 'icicle-alternative-sort-comparer 'icicle-sort-comparer)
-                    (cdr (assoc next-order icicle-sort-orders-alist))))
-              (t                        ; Cycle to next sort order.
-               (let ((orders  (mapcar #'car (icicle-current-sort-functions))))
-                 (setq next-order       (or (cadr (memq (icicle-current-sort-order alternativep) orders))
-                                            (car orders))
-                       following-order  (or (cadr (memq next-order orders))  (car orders)))
+  (let ((orders  (delq nil icicle-sort-orders-alist))) ; Purge any nil entries.
+    (if (and (interactive-p)  icicle-inhibit-sort-p)
+        (icicle-msg-maybe-in-minibuffer "Cannot sort candidates now")
+      (if (and arg  (not (consp arg)))
+          (icicle-reverse-sort-order)
+        (let* ((following-order   nil)
+               (use-completion-p  (if (integerp icicle-change-sort-order-completion)
+                                      (> (length (icicle-current-sort-functions orders))
+                                         icicle-change-sort-order-completion)
+                                    icicle-change-sort-order-completion))
+               (use-completion-p  (or (and (not arg)  use-completion-p) ; Use completion.
+                                      (and arg        (not use-completion-p))))
+               next-order)
+          (cond (use-completion-p
+                 (setq next-order  (let ((icicle-whole-candidate-as-text-prop-p   nil)
+                                         (icicle-must-pass-after-match-predicate  nil)
+                                         (icicle-show-Completions-initially-flag  t)
+                                         (enable-recursive-minibuffers            t)
+                                         (icicle-default-value                    t) ; Put current in prompt.
+                                         (icicle-sort-comparer                    'icicle-case-string-less-p)
+                                         (icicle-sort-orders-alist                nil) ; No choices here.
+                                         (icicle-default-in-prompt-format-function
+                                          (lambda (def) (format " (default: %s)" def))))
+                                     (save-selected-window
+                                       (completing-read
+                                        (format "New %ssort order: " (if alternativep "alternative " ""))
+                                        (icicle-current-sort-functions orders)
+                                        nil t nil nil
+                                        (car (rassoc (if alternativep
+                                                         icicle-alternative-sort-comparer
+                                                       icicle-sort-comparer)
+                                                     orders))))))
                  (when (if alternativep icicle-alternative-sort-comparer icicle-sort-comparer)
                    (setq icicle-last-sort-comparer  (if alternativep ; Save current as last.
                                                         icicle-alternative-sort-comparer
                                                       icicle-sort-comparer)))
                  (set (if alternativep 'icicle-alternative-sort-comparer 'icicle-sort-comparer)
-                      (cdr (assoc next-order icicle-sort-orders-alist))))))
-        (icicle-complete-again-update)
-        (icicle-msg-maybe-in-minibuffer
-         "%sorting is now %s.  Reverse: `C-9 C-,'%s"
-         (if alternativep "Alternative s" "S")
-         (icicle-propertize (concat next-order (and icicle-reverse-sort-p  ", REVERSED"))
-                            'face 'icicle-msg-emphasis)
-         (if following-order (format ".  Next: %s" following-order) "")))
-      (when (fboundp 'completion--flush-all-sorted-completions) ; E.g., so Icomplete+ recomputes order.
-        (completion--flush-all-sorted-completions)))))
+                      (cdr (assoc next-order orders))))
+                (t                      ; Cycle to next sort order.
+                 (let ((order-names  (mapcar #'car (icicle-current-sort-functions orders))))
+                   (setq next-order       (or (cadr (memq (icicle-current-sort-order alternativep)
+                                                          order-names))
+                                              (car order-names))
+                         following-order  (or (cadr (memq next-order order-names))  (car order-names)))
+                   (when (if alternativep icicle-alternative-sort-comparer icicle-sort-comparer)
+                     (setq icicle-last-sort-comparer  (if alternativep ; Save current as last.
+                                                          icicle-alternative-sort-comparer
+                                                        icicle-sort-comparer)))
+                   (set (if alternativep 'icicle-alternative-sort-comparer 'icicle-sort-comparer)
+                        (cdr (assoc next-order icicle-sort-orders-alist))))))
+          (icicle-complete-again-update)
+          (icicle-msg-maybe-in-minibuffer
+           "%sorting is now %s.  Reverse: `C-9 C-,'%s"
+           (if alternativep "Alternative s" "S")
+           (icicle-propertize (concat next-order (and icicle-reverse-sort-p  ", REVERSED"))
+                              'face 'icicle-msg-emphasis)
+           (if following-order (format ".  Next: %s" following-order) "")))
+        (when (fboundp 'completion--flush-all-sorted-completions) ; E.g., so Icomplete+ recomputes order.
+          (completion--flush-all-sorted-completions))))))
 
-(defun icicle-current-sort-functions ()
+(defun icicle-current-sort-functions (&optional orders-alist)
   "Subset of `icicle-sort-orders-alist' that is currently appropriate.
+Optional arg ORDERS-ALIST is an alternative alist to use, instead of
+`icicle-sort-orders-alist'.
 For some common kinds of completion, remove simple sort functions (not
 multi-sort comparers) that are not pertinent for the current kind of
 completion."
@@ -2093,7 +2109,7 @@ completion."
                                ;; or it could be a list of multi-completions.
                                (and (get pred 'icicle-multi-completion-sort-predicate)
                                     (not (icicle-maybe-multi-completion-completing-p))))))
-                    icicle-sort-orders-alist))
+                    (or orders-alist  icicle-sort-orders-alist)))
 
 (defun icicle-maybe-multi-completion-completing-p ()
   "Returns non-nil if we might currently be multi-completion completing.
@@ -2525,7 +2541,7 @@ By default, this is bound to `C-x C-M-l' during completion."
                          (save-excursion
                            (save-restriction
                              (narrow-to-region beg end) ; Restrict to the completion candidate.
-                             (let* ((candidate  (buffer-substring (point-min) (point-max)))
+                             (let* ((candidate  (buffer-string))
                                     (orig-pt    (point))
                                     (start      0)
                                     (end        0)
@@ -2962,8 +2978,7 @@ These are the main Icicles actions and their minibuffer key bindings:
      Cycle among completion candidates       right, left, \
 \\[icicle-move-to-next-completion], \\[icicle-move-to-previous-completion]
        Within a `*Completions*' column       down, up
-     Choose a completion candidate           \\[choose-completion], \
-\\[mouse-choose-completion]\\<minibuffer-local-completion-map>
+     Choose a completion candidate           \\[choose-completion]\\<minibuffer-local-completion-map>
 
  * Cycle among input candidates.
      Completion candidates
@@ -3178,7 +3193,7 @@ These are the minibuffer bindings when not completing input:
 ;; Taken from the definition of `def-completion-wrapper' in `completion.el'.
 (put 'icicle-abort-recursive-edit 'completion-function 'use-completion-minibuffer-separator)
 
-(defun icicle-abort-recursive-edit ()   ; Bound to `C-]',`C-g' in minibuf, `C-g',`q' in `*Completions*'.
+(defun icicle-abort-recursive-edit () ; Bound to `C-]',`C-g' in minibuf, `C-g',`q' in `*Completions*'.
   "Abort recursive edit or minibuffer input, or just deactivate region.
 If called from the minibuffer, the region is active there, and
 `delete-selection-mode' is turned on, then just deactivate the region.
@@ -3199,7 +3214,7 @@ you do not want this remapping, then customize option
         (when (get-buffer "*Completions*") (kill-buffer (get-buffer "*Completions*")))
       (when (and (boundp '1on1-fit-minibuffer-frame-flag) ; In `oneonone.el'.
                  1on1-fit-minibuffer-frame-flag  (require 'fit-frame nil t))
-        (1on1-fit-minibuffer-frame 'RESET))
+        (1on1-fit-minibuffer-frame (= (minibuffer-depth) 1)))
       (icicle-remove-Completions-window 'FORCE))
     (abort-recursive-edit)))
 
@@ -5278,7 +5293,7 @@ Non-interactively, optional arg COMPLETION is the completion to insert."
   "The completion candidate under the cursor in buffer `*Completions*'.
 Return the name as a string."           ; See also `choose-completion' and `mouse-choose-completion'.
   (let ((buffer          completion-reference-buffer)
-        (base-size       completion-base-size)
+        (base-size       (or (and (boundp 'completion-base-size)  completion-base-size)  0))
         (start-of-cands  (icicle-start-of-candidates-in-Completions))
         beg end)
     (when (and (not (eobp))  (get-text-property (point) 'mouse-face))
@@ -6509,7 +6524,7 @@ Non-nil optional arg NO-ERROR-P prints an error message but does not
     (unless (eq 0 (call-process shell-file-name nil t nil shell-command-switch
                                 (format "exiftool -All \"%s\"" file)))
       (error "Could not get EXIF data for image"))
-    (buffer-substring (point-min) (point-max))))
+    (buffer-string)))
 
 (defun icicle-candidate-read-fn-invoke () ; Bound to `M-return' in minibuffer.
   "Read function name.  Invoke function on current completion candidate.
@@ -6548,7 +6563,7 @@ You can use this command only from the minibuffer (`\\<minibuffer-local-completi
     (with-current-buffer (window-buffer posn-win)
       (save-excursion
         ;; $$$$$$ (when completion-reference-buffer (setq buffer  completion-reference-buffer))
-        (setq base-size  completion-base-size)
+        (setq base-size  (or (and (boundp 'completion-base-size)  completion-base-size)  0))
         (goto-char (posn-point (event-start event)))
         (let (beg end)
           (when (and (not (eobp))  (get-text-property (point) 'mouse-face))
@@ -6639,7 +6654,7 @@ which can position mouse pointer on a standalone minibuffer frame."
     (with-current-buffer (window-buffer posn-win)
       (save-excursion
         ;; $$$$$$ (when completion-reference-buffer (setq buffer  completion-reference-buffer))
-        (setq base-size  completion-base-size)
+        (setq base-size  (or (and (boundp 'completion-base-size)  completion-base-size)  0))
         (goto-char (posn-point (event-start event)))
         (let (beg end)
           (when (and (not (eobp))  (get-text-property (point) 'mouse-face))
@@ -7420,7 +7435,12 @@ The first N candidates are kept.  N is read."
            (setq icicle-saved-completion-candidates-internal  icicle-completion-candidates)
            (if current-prefix-arg
                (prefix-numeric-value current-prefix-arg)
-             (read-number "Number of candidates to keep: ")))))
+             (let ((prompt  "Number of candidates to keep: "))
+               (if (fboundp 'icicle-read-number) ; Emacs 22+
+                   (icicle-read-number prompt)
+                 (if (fboundp 'read-number)
+                     (read-number prompt)
+                   (read-from-minibuffer prompt)))))))) ; Hope for a number.
   (setq icicle-completion-candidates  icicle-saved-completion-candidates-internal)
   (setcdr (nthcdr (1- n) icicle-completion-candidates) nil)
   (icicle-maybe-sort-and-strip-candidates)
@@ -7608,7 +7628,7 @@ If the candidate is already saved, then unsave it; otherwise, save it."
     (with-current-buffer (window-buffer posn-win)
       (save-excursion
         ;; $$$$$$ (when completion-reference-buffer (setq buffer  completion-reference-buffer))
-        (setq base-size  completion-base-size)
+        (setq base-size  (or (and (boundp 'completion-base-size)  completion-base-size)  0))
         (goto-char (posn-point (event-start event)))
         (let (beg end)
           (when (and (not (eobp))  (get-text-property (point) 'mouse-face))
@@ -9301,7 +9321,8 @@ it is the only frame or a standalone minibuffer frame."
   (setq buffer  (get-buffer buffer))    ; Convert to buffer.
   (when buffer                          ; Do nothing if null BUFFER.
     ;; Avoid error message "Attempt to delete minibuffer or sole ordinary window".
-    (let* ((this-buffer-frames  (icicle-frames-on buffer))
+    (let* ((selected-frame      (selected-frame))
+           (this-buffer-frames  (icicle-frames-on buffer))
            (this-frame          (car this-buffer-frames))
            mini-param)
       (unless (and this-frame
@@ -9318,7 +9339,10 @@ it is the only frame or a standalone minibuffer frame."
             (select-window win)
             (if (and (one-window-p t)  (cdr (visible-frame-list))) ; Sole window but not sole frame.
                 (delete-frame)
-              (delete-window (selected-window)))))))))
+              (delete-window (selected-window)))))
+        ;; Deleting frames can put another frame on top of originally selected frame.  Undo that.
+        (when (frame-live-p selected-frame)
+          (select-frame-set-input-focus selected-frame)))))) ; In particular, keep minibuffer frame on top.
 
 (defun icicle-recomplete-from-original-domain (reversep) ; Bound to `C-x C-0' during completion.
   "Recomplete your last typed input, using the original domain.

@@ -4,11 +4,11 @@
 ;; Description: Top-level commands for Icicles
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 1996-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 1996-2021, Drew Adams, all rights reserved.
 ;; Created: Thu May 21 13:31:43 2009 (-0700)
-;; Last-Updated: Mon Jan  1 13:59:20 2018 (-0800)
+;; Last-Updated: Wed Mar 17 13:59:00 2021 (-0700)
 ;;           By: dradams
-;;     Update #: 7444
+;;     Update #: 7484
 ;; URL: https://www.emacswiki.org/emacs/download/icicles-cmd2.el
 ;; Doc URL: https://www.emacswiki.org/emacs/Icicles
 ;; Keywords: extensions, help, abbrev, local, minibuffer,
@@ -17,19 +17,29 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;   `apropos', `apropos+', `apropos-fn+var', `avoid', `bookmark',
-;;   `bookmark+', `bookmark+-1', `bookmark+-bmu', `bookmark+-key',
-;;   `bookmark+-lit', `cl', `cus-edit', `cus-face', `cus-load',
-;;   `cus-start', `cus-theme', `doremi', `easymenu',
-;;   `el-swank-fuzzy', `ffap', `ffap-', `fit-frame', `flx',
-;;   `frame-cmds', `frame-fns', `fuzzy', `fuzzy-match', `help+20',
-;;   `hexrgb', `icicles-cmd1', `icicles-fn', `icicles-mcmd',
-;;   `icicles-opt', `icicles-var', `image-dired', `info', `info+20',
-;;   `isearch+', `kmacro', `levenshtein', `menu-bar', `menu-bar+',
-;;   `misc-cmds', `misc-fns', `mouse3', `mwheel', `naked', `package',
-;;   `pp', `pp+', `ring', `second-sel', `strings', `thingatpt',
-;;   `thingatpt+', `unaccent', `w32browser-dlgopen', `wid-edit',
-;;   `wid-edit+', `widget'.
+;;   `apropos', `apropos+', `apropos-fn+var', `auth-source', `avoid',
+;;   `backquote', `bookmark', `bookmark+', `bookmark+-1',
+;;   `bookmark+-bmu', `bookmark+-key', `bookmark+-lit', `button',
+;;   `bytecomp', `cconv', `cl', `cl-generic', `cl-lib', `cl-macs',
+;;   `cmds-menu', `col-highlight', `color', `crosshairs', `cus-edit',
+;;   `cus-face', `cus-load', `cus-start', `cus-theme', `custom',
+;;   `dired', `dired-loaddefs', `doremi', `easymenu', `eieio',
+;;   `eieio-core', `eieio-loaddefs', `el-swank-fuzzy', `epg-config',
+;;   `ffap', `ffap-', `fit-frame', `flx', `font-lock', `font-lock+',
+;;   `format-spec', `frame-cmds', `frame-fns', `fuzzy',
+;;   `fuzzy-match', `gv', `help+', `help-fns', `help-fns+',
+;;   `help-macro', `help-macro+', `help-mode', `hexrgb', `highlight',
+;;   `hl-line', `hl-line+', `icicles-cmd1', `icicles-fn',
+;;   `icicles-mcmd', `icicles-opt', `icicles-var', `image',
+;;   `image-dired', `image-mode', `info', `info+', `isearch+',
+;;   `isearch-prop', `kmacro', `levenshtein', `macroexp', `menu-bar',
+;;   `menu-bar+', `misc-cmds', `misc-fns', `mouse3', `mwheel',
+;;   `naked', `package', `password-cache', `pp', `pp+', `radix-tree',
+;;   `replace', `ring', `second-sel', `seq', `strings', `syntax',
+;;   `tabulated-list', `text-mode', `thingatpt', `thingatpt+',
+;;   `timer', `url-handlers', `url-parse', `url-vars', `vline',
+;;   `w32browser-dlgopen', `wid-edit', `wid-edit+', `widget',
+;;   `zones'.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -455,12 +465,15 @@
 (defvar icicle-track-pt)                ; In `icicle-insert-thesaurus-entry'
 (defvar icomplete-mode)                 ; In `icomplete.el'
 (defvar imenu-after-jump-hook)          ; In `imenu.el' (Emacs 22+)
+(defvar package-alist)                  ; In `package.el' (Emacs 25+)
+(defvar package-archive-contents)       ; In `package.el' (Emacs 25+)
+(defvar package--builtins)              ; In `package.el' (Emacs 25+)
 (defvar replace-count)                  ; In `replace.el'
 (defvar woman-expanded-directory-path)  ; In `woman.el'
 (defvar woman-manpath)                  ; In `woman.el'
 (defvar woman-path)                     ; In `woman.el'
 (defvar woman-topic-all-completions)    ; In `woman.el'
-(defvar zz-izones)                      ; In `zones.el'
+(defvar zz-izones-var)                  ; In `zones.el'
 (defvar zz-lighter-narrowing-part)      ; In `zones.el'
 
 ;; (< emacs-major-version 21)
@@ -1489,7 +1502,7 @@ Sets these variables, which are assumed to be already `let'-bound:
 Puts property `icicle-fancy-candidates' on string `icicle-prompt'."
     (if (< emacs-major-version 22)
         (require 'eyedropper nil t)
-      (or (require 'palette nil t)  (require 'eyedropper nil t)))
+      (or (condition-case nil (require 'palette nil t) (error nil))  (require 'eyedropper nil t)))
     (when (stringp icicle-prompt)       ; Sanity check - should be true.
       (put-text-property 0 1 'icicle-fancy-candidates t icicle-prompt))
     (icicle-highlight-lighter)
@@ -2266,9 +2279,9 @@ names in `*Completions*' more or less in their own font, and
 abbreviated to not include the last 8 XLFD fields (PIXELS, HEIGHT,
 HORIZ, VERT, SPACING, WIDTH, REGISTRY, and ENCODING).
 
-If `icicle-WYSIWYG-Completions-flag' is non-nil then the font names
-are not shown using their fonts and full XLFD font names are used.
-Full names means that all available variants are available as separate
+If `icicle-WYSIWYG-Completions-flag' is nil then the font names are
+not shown using their fonts and full XLFD font names are used.  Full
+names means that all available variants are available as separate
 candidates (different REGISTRY entries etc.).
 
 You can toggle `icicle-WYSIWYG-Completions-flag' using `C-S-pause',
@@ -2472,7 +2485,6 @@ For more flexibility, use multi-command `icicle-font-lock-keyword'."
                          startovr
                          reset
                          'MSGP)))
-    (require 'repeat)
     (icicle-repeat-command 'icicle-next-font-lock-keywords))
 
   (icicle-define-command icicle-font-lock-keyword
@@ -2862,7 +2874,7 @@ From Lisp code:
   (if (and (string= nodename "..")  (Info-check-pointer "up"))
       (Info-up)
     (if (> emacs-major-version 20)
-        (icicle-ORIG-Info-goto-node nodename (natnump arg))
+        (icicle-ORIG-Info-goto-node nodename (and arg  (natnump (prefix-numeric-value arg))))
       (icicle-ORIG-Info-goto-node nodename))))
 
 (defun icicle-Info-read-node-name (prompt &optional include-file-p)
@@ -3615,14 +3627,15 @@ Each candidate for completion is a symbol name plus its type
 components are separated by `icicle-list-join-string' (\"^G^J\", by
 default).  You can match an input regexp against the symbol name,
 type, or the documentation or any combination of the three.  Use
-`C-M-j' (equivalent here to `C-q C-g C-j') to input the default
+\\<minibuffer-local-completion-map>`\\[icicle-insert-list-join-string]' \
+\(equivalent here to `C-q C-g C-j') to input the default
 separator.
 
 With a prefix argument, use the same documentation that was gathered
 the last time `icicle-doc' was called.  Use a prefix arg to save the
 time that would be needed to gather the documentation.
 
-You can use `C-$' during completion to toggle filtering the domain of
+You can use `\\[icicle-toggle-transforming]' during completion to toggle filtering the domain of
 initial candidates between all functions, variables, and faces and
 only commands, user options and faces.
 
@@ -3967,7 +3980,7 @@ See also commands `icicle-goto-any-marker' and
 (defun icicle-goto-any-marker ()        ; Bound to `C-0 C-@', `C-0 C-SPC'.
   "Like `icicle-goto-marker', but lets you visit markers in all buffers.
 If user option `icicle-show-multi-completion-flag' is non-nil, then
-each completion candidate is has two parts, the first of which is the
+each completion candidate has two parts, the first of which is the
 name of the marker's buffer, and the second of which is the text from
 the marker's line.
 
@@ -4606,10 +4619,12 @@ The arguments are for use by `completing-read' to read the regexp.
       (setq regexp  (icicle-completing-read-history prompt 'regexp-history pred init def i-i-m)))
     (setq prompt                       "Subgroup to use as search context [0, 1, 2,...]: "
           icicle-search-context-level  (if (string-match "\\\\(" regexp)
-                                           (truncate (if (fboundp 'read-number)
-                                                         (read-number prompt 0)
-                                                       (read-from-minibuffer ; Hope for a number.
-                                                        prompt nil nil nil nil 0)))
+                                           (truncate (if (fboundp 'icicle-read-number) ; Emacs 22+
+                                                         (icicle-read-number prompt 0)
+                                                       (if (fboundp 'read-number)
+                                                           (read-number prompt 0)
+                                                         (read-from-minibuffer ; Hope for a number.
+                                                          prompt nil nil nil nil 0))))
                                          0))
     regexp))
 
@@ -4745,7 +4760,10 @@ The arguments are the same as for `icicle-search'."
                (message "%d contexts; searching %d/%d: `%s'"
                         (length icicle-candidates-alist) nb-contexts nb-objects
                         bmk)
-               (setq buf+beg  (bookmark-jump-noselect bmk)
+               (setq buf+beg  (if (fboundp 'bookmark-jump-noselect)
+                                  (bookmark-jump-noselect bmk) ; Emacs < 23 and without `Bookmark+'.
+                                (save-excursion (bookmark-handle-bookmark bmk)
+                                                (cons (current-buffer) (point))))
                      buf      (car buf+beg)
                      beg      (cdr buf+beg)
                      end      (bmkp-get-end-position bmk))
@@ -5165,13 +5183,11 @@ current input matches candidate") (sit-for 2))
           ;; 1. Bind `icicle-whole-candidate-as-text-prop-p' to nil (in `icicle-search-action'
           ;;    and `icicle-search-help').
           ;; 2. Use these two lines, instead of calling `icicle-search-replace-cand-in-mct'.
-          ;;    (icicle-search-replace-cand-in-alist cand+mrker
-          ;;                                         (buffer-substring (point-min) (point-max)))
-          ;;    (setq minibuffer-completion-table
-          ;;          (car (icicle-mctize-all icicle-candidates-alist nil)))
+          ;;    (icicle-search-replace-cand-in-alist cand+mrker (buffer-string))
+          ;;    (setq minibuffer-completion-table  (car (icicle-mctize-all icicle-candidates-alist nil)))
           ;;  If we used that method (as we used to), then users could not sort the search hits.
 
-          (icicle-search-replace-cand-in-mct cand+mrker (buffer-substring (point-min) (point-max)))
+          (icicle-search-replace-cand-in-mct cand+mrker (buffer-string))
 
           ;; If we are replacing input matches within a search context, and there are no more matches
           ;; in the current context, then this context is removed as a candidate. If the current
@@ -5239,8 +5255,7 @@ FIXEDCASE is as for `replace-match'.  Non-nil means do not alter case."
                      (funcall (car compiled) (cdr compiled) (setq replace-count  (1+ replace-count)))
                    compiled)
                  fixedcase icicle-search-replace-literally-flag nil (match-data)
-                 nil))                  ; BACKWARD parameter for Emacs 24.4+ - see bug #18388
-            ;; @@@@@@ Hopefully this is only a temporary hack, until Emacs bug #18388 is fixed.
+                 nil)) ; BACKWARD parameter is required for Emacs 24 (only) - see bug #18388.
             (wrong-number-of-arguments
              (condition-case icicle-search-replace-match3
                  (replace-match-maybe-edit
@@ -5857,9 +5872,10 @@ This function respects `icicle-search-complement-domain-p',
 `icicle-hide-whitespace-before-comment-flag'."
   (let ((add-bufname-p  (and buffer  icicle-show-multi-completion-flag))
         (temp-list      ())
-        (last-beg       nil))
+        (last-beg       nil)
+        (last-hit-end   nil))
     (unless buffer (setq buffer  (current-buffer)))
-    (when (bufferp buffer)              ; Do nothing if BUFFER is not a buffer.
+    (when (bufferp buffer)     ; Do nothing if BUFFER is not a buffer.
       (with-current-buffer buffer
         (unless beg (setq beg  (point-min)))
         (unless end (setq end  (point-max)))
@@ -5867,90 +5883,83 @@ This function respects `icicle-search-complement-domain-p',
         (icicle-with-comments-hidden
          beg end
          (icicle-condition-case-no-debug icicle-search-thing-scan
-             (save-excursion
-               (goto-char (setq last-beg  beg)) ; `icicle-next-visible-thing-and-bounds' uses point.
-               (while (and last-beg  (< last-beg end))
-                 (while (and (< beg end)  (icicle-invisible-p beg)) ; Skip invisible, overlay or text.
-                   (when (get-char-property beg 'invisible)
-                     (setq beg  (icicle-next-single-char-property-change beg 'invisible nil end))))
-                 (let ((thg+bnds  (icicle-next-visible-thing-and-bounds thing beg end)))
-                   (if (and (not thg+bnds)  (not icicle-search-complement-domain-p))
-                       (setq beg  end)
-                     (let* ((thg-beg       (cadr thg+bnds))
-                            (thg-end       (cddr thg+bnds))
-                            (tr-thg-beg    thg-beg)
-                            (tr-thg-end    thg-end)
-                            (hit-beg       (if icicle-search-complement-domain-p
-                                               last-beg
-                                             tr-thg-beg))
-                            (hit-end       (if icicle-search-complement-domain-p
-                                               (or tr-thg-beg  end)
-                                             tr-thg-end))
-                            (hit-string    (buffer-substring hit-beg hit-end))
-                            (end-marker    (copy-marker hit-end))
-                            (filteredp     (or (not predicate)
-                                               (not thg+bnds)
-                                               (funcall predicate thg+bnds)))
-                            (new-thg+bnds  (if icicle-search-complement-domain-p
-                                               thg+bnds
-                                             (and filteredp
-                                                  thg+bnds
-                                                  (if transform-fn
-                                                      (funcall transform-fn thg+bnds)
-                                                    thg+bnds)))))
-                       (when (and (not (string= "" hit-string)) ; No-op if empty hit.
-                                  (or new-thg+bnds  icicle-search-complement-domain-p))
-                         (when (and transform-fn  (not icicle-search-complement-domain-p))
-                           (setq hit-string  (car  new-thg+bnds)
-                                 tr-thg-beg  (cadr new-thg+bnds)
-                                 tr-thg-end  (cddr new-thg+bnds)
-                                 end-marker  (copy-marker tr-thg-end)))
+                                         (save-excursion
+                                           (goto-char (setq last-beg  beg)) ; `icicle-next-visible-thing-and-bounds' uses point.
+                                           (while (and last-beg  (< last-beg end))
+                                             (while (and (< beg end)  (icicle-invisible-p beg)) ; Skip invisible, overlay or text.
+                                               (when (get-char-property beg 'invisible)
+                                                 (setq beg  (icicle-next-single-char-property-change beg 'invisible nil end))))
+                                             (let ((thg+bnds  (icicle-next-visible-thing-and-bounds thing beg end)))
+                                               (if (and (not thg+bnds)  (not icicle-search-complement-domain-p))
+                                                   (setq beg  end)
+                                                 (let* ((thg-beg       (cadr thg+bnds))
+                                                        (thg-end       (cddr thg+bnds))
+                                                        (tr-thg-beg    thg-beg)
+                                                        (tr-thg-end    thg-end)
+                                                        (hit-beg       (if icicle-search-complement-domain-p
+                                                                           last-beg
+                                                                         tr-thg-beg))
+                                                        (hit-end       (if icicle-search-complement-domain-p
+                                                                           (or tr-thg-beg  end)
+                                                                         tr-thg-end))
+                                                        (hit-string    (buffer-substring hit-beg hit-end))
+                                                        (end-marker    (copy-marker hit-end))
+                                                        (filteredp     (or (not predicate)
+                                                                           (not thg+bnds)
+                                                                           (funcall predicate thg+bnds)))
+                                                        (new-thg+bnds  (if icicle-search-complement-domain-p
+                                                                           thg+bnds
+                                                                         (and filteredp
+                                                                              thg+bnds
+                                                                              (if transform-fn
+                                                                                  (funcall transform-fn thg+bnds)
+                                                                                thg+bnds)))))
+                                                   (when (and (not (string= "" hit-string)) ; No-op if empty hit.
+                                                              (or new-thg+bnds  icicle-search-complement-domain-p))
+                                                     (when (and transform-fn  (not icicle-search-complement-domain-p))
+                                                       (setq hit-string  (car  new-thg+bnds)
+                                                             tr-thg-beg  (cadr new-thg+bnds)
+                                                             tr-thg-end  (cddr new-thg+bnds)
+                                                             end-marker  (copy-marker tr-thg-end)))
+                                                     (setq last-hit-end  tr-thg-end)
+                                                     (when (and icicle-ignore-comments-flag  icicle-search-complement-domain-p)
+                                                       (put-text-property 0 (length hit-string) 'invisible nil hit-string))
 
-                         (when (and icicle-ignore-comments-flag  icicle-search-complement-domain-p)
-                           (put-text-property 0 (length hit-string) 'invisible nil hit-string))
-
-                         (icicle-candidate-short-help
-                          (concat (and add-bufname-p  (format "Buffer: `%s', "
-                                                              (buffer-name (marker-buffer end-marker))))
-                                  (format "Bounds: (%d, %d), Length: %d"
-                                          hit-beg hit-end (length hit-string)))
-                          hit-string)
-                         (push (cons (if add-bufname-p
-                                         (list hit-string
-                                               (let ((string  (copy-sequence (buffer-name))))
-                                                 (put-text-property
-                                                  0 (length string)
-                                                  'face 'icicle-candidate-part string)
-                                                 string))
-                                       hit-string)
-                                     end-marker)
-                               temp-list)
-                         ;; Highlight search context in buffer.
-                         (when (and (not (equal hit-beg hit-end))
-                                    (or (eq t icicle-search-highlight-threshold)
-                                        (<= (+ (length temp-list) (length icicle-candidates-alist))
-                                            icicle-search-highlight-threshold)))
-                           (let ((ov  (make-overlay hit-beg hit-end)))
-                             (push ov icicle-search-overlays)
-                             (overlay-put ov 'priority 200) ; > ediff's 100+, but < isearch overlays
-                             (overlay-put ov 'face 'icicle-search-main-regexp-others))))
-                       (if thg-end
-                           ;; $$$$$$
-                           ;; The correct code here is (setq beg end).  However, unless you use my
-                           ;; library `thingatpt+.el' or unless Emacs bug #9300 is fixed (hopefully
-                           ;; in Emacs 24), that will loop forever.  In that case we move forward a
-                           ;; char to prevent looping, but that means that the position just after
-                           ;; a THING is considered to be covered by the THING (which is incorrect).
-                           (setq beg  (if (or (featurep 'thingatpt+)  (> emacs-major-version 23))
-                                          thg-end
-                                        (1+ thg-end)))
-                         ;; If visible then no more things - skip to END.
-                         (unless (icicle-invisible-p beg) (setq beg  end)))))
-                   (setq last-beg  beg)))
-               (setq icicle-candidates-alist  (append icicle-candidates-alist (nreverse temp-list))))
-           (quit (when icicle-search-cleanup-flag (icicle-search-highlight-cleanup)))
-           (error (when icicle-search-cleanup-flag (icicle-search-highlight-cleanup))
-                  (error "%s" (error-message-string icicle-search-thing-scan)))))))))
+                                                     (icicle-candidate-short-help
+                                                      (concat (and add-bufname-p
+                                                                   (format "Buffer: `%s', "
+                                                                           (buffer-name (marker-buffer end-marker))))
+                                                              (format "Bounds: (%d, %d), Length: %d"
+                                                                      hit-beg hit-end (length hit-string)))
+                                                      hit-string)
+                                                     (push (cons (if add-bufname-p
+                                                                     (list hit-string
+                                                                           (let ((string  (copy-sequence (buffer-name))))
+                                                                             (put-text-property
+                                                                              0 (length string)
+                                                                              'face 'icicle-candidate-part string)
+                                                                             string))
+                                                                   hit-string)
+                                                                 end-marker)
+                                                           temp-list)
+                                                     ;; Highlight search context in buffer.
+                                                     (when (and (not (equal hit-beg hit-end))
+                                                                (or (eq t icicle-search-highlight-threshold)
+                                                                    (<= (+ (length temp-list) (length icicle-candidates-alist))
+                                                                        icicle-search-highlight-threshold)))
+                                                       (let ((ov  (make-overlay hit-beg hit-end)))
+                                                         (push ov icicle-search-overlays)
+                                                         (overlay-put ov 'priority 200) ; > ediff's 100+, but < isearch overlays
+                                                         (overlay-put ov 'face 'icicle-search-main-regexp-others))))
+                                                   (if thg-end
+                                                       (setq beg  (if (= last-hit-end tr-thg-end) (1+ thg-end) thg-end))
+                                                     ;; If visible then no more things - skip to END.
+                                                     (unless (icicle-invisible-p beg) (setq beg  end)))))
+                                               (setq last-beg  beg)))
+                                           (setq icicle-candidates-alist  (append icicle-candidates-alist (nreverse temp-list))))
+                                         (quit (when icicle-search-cleanup-flag (icicle-search-highlight-cleanup)))
+                                         (error (when icicle-search-cleanup-flag (icicle-search-highlight-cleanup))
+                                                (error "%s" (error-message-string icicle-search-thing-scan)))))))))
 
 ;; Same as `thgcmd-invisible-p' in `thing-cmds.el'.
 (defun icicle-invisible-p (position)
@@ -6313,7 +6322,10 @@ text properties, or both, respectively."
          (unless (require 'bookmark+ nil t) (icicle-user-error "You need library `Bookmark+' for this"))
          (let (buf+beg buf beg end)
            (dolist (bmk  where)
-             (setq buf+beg  (bookmark-jump-noselect bmk)
+             (setq buf+beg  (if (fboundp 'bookmark-jump-noselect)
+                                (bookmark-jump-noselect bmk) ; Emacs < 23 and without `Bookmark+'.
+                              (save-excursion (bookmark-handle-bookmark bmk)
+                                              (cons (current-buffer) (point))))
                    buf      (car buf+beg)
                    beg      (cdr buf+beg)
                    end      (bmkp-get-end-position bmk))
@@ -8285,11 +8297,13 @@ filtering:
               (icompletep                              (and (featurep 'icomplete)  icomplete-mode))
               (icicle-must-pass-after-match-predicate  icicle-buffer-predicate)
               (icicle-require-match-flag               icicle-buffer-require-match-flag)
+              (icicle-buffer-completing-p              t)
               (icicle-extra-candidates                 icicle-buffer-extras)
-              (icicle-delete-candidate-object          'icicle-kill-a-buffer) ; `S-delete' kills buf
+              (icicle-delete-candidate-object          'icicle-kill-a-buffer) ; `S-delete' kills current buf
               (icicle-transform-function               'icicle-remove-dups-if-extras)
+              (icicle-sort-comparer                    icicle-sort-comparer)
               (icicle--temp-orders
-               (append (list '("by last access") ; Renamed from "turned OFF'.
+               (append (list '("by last display time") ; Renamed from "turned OFF'.
                              '("*...* last" . icicle-buffer-sort-*...*-last)
                              '("by buffer size" . icicle-buffer-smaller-p)
                              '("by major mode name" . icicle-major-mode-name-less-p)
@@ -8297,11 +8311,11 @@ filtering:
                                   '("by mode-line mode name" . icicle-mode-line-name-less-p))
                              '("by file/process name" . icicle-buffer-file/process-name-less-p))
                        (delete '("turned OFF") (copy-sequence icicle-sort-orders-alist))))
-              ;; Put `icicle-buffer-sort' first.  If already in list, move it, else add it, to start.
+              ;; Put `icicle-buffer-sort' first.  If already in the list, move it, else add it, to beginning.
               (icicle-sort-orders-alist
-               (progn (when (and icicle-buffer-sort-first-time-p  icicle-buffer-sort)
-                        (setq icicle-sort-comparer             icicle-buffer-sort
-                              icicle-buffer-sort-first-time-p  nil))
+               (progn (when t ; $$$$ (and icicle-buffer-sort-first-time-p  icicle-buffer-sort)
+                        (setq icicle-sort-comparer  icicle-buffer-sort))
+                      ;; $$$$ (setq icicle-buffer-sort-first-time-p  nil))
                       (if icicle-buffer-sort
                           (let ((already-there  (rassq icicle-buffer-sort icicle--temp-orders)))
                             (if already-there
@@ -8466,13 +8480,21 @@ candidates to packages of different kinds."
                                       packages nil t nil nil guess)))
            (list (if (equal val "") guess (intern val)))))))
     (if (not (or (and (fboundp 'package-desc-p)  (package-desc-p package))
-                 (and package (symbolp package))))
+                 (and package  (symbolp package))))
         (when (called-interactively-p 'interactive) (message "No package specified"))
       (help-setup-xref (list #'describe-package package) (called-interactively-p 'interactive))
       (with-help-window (help-buffer)
         (with-current-buffer standard-output
           (describe-package-1 package)
-          (when (fboundp 'package-desc-name)  (setq package  (package-desc-name package))) ; Emacs 24.4+
+          (when (fboundp 'package-desc-name)
+            (let* ((desc  (or (and (package-desc-p package)  package)
+                              (cadr (assq package package-alist))
+                              (let ((built-in  (assq package package--builtins)))
+                                (if built-in
+                                    (package--from-builtin built-in)
+                                  (cadr (assq package package-archive-contents))))))
+                   (name  (if desc (package-desc-name desc) package)))
+              (setq package  name)))
           (when (fboundp 'Info-make-manuals-xref) ; In `help-fns+.el', for Emacs 23.2+.
             (Info-make-manuals-xref (concat (symbol-name package) " package")
                                     nil nil (not (called-interactively-p 'interactive)))))))))
@@ -9111,9 +9133,14 @@ completions are found for PREFIX."
                                  (put candidate 'icicle-special-candidate t))))))))
             ((and
               ;; Include BINDING if key (EVENT) is on `icicle-key-prefix-2'.
-              ;; Do not include a shadowed binding to a command.  Always include binding if it's a keymap,
+              ;; Do not include a shadowed binding to a command.  But always include a shadowed binding if it's a keymap,
               ;; because the same prefix key can be bound to different keymaps without any of those keymaps
               ;; shadowing all of the bindings in another of them.
+              ;;
+              ;; Note that for a shadowed binding that's a keymap, the highlighting will be for the highest binding that
+              ;; shadows it.  E.g., a keymap bound to ESC at the top level shadows one at a lower level, and if the higher
+              ;; one is local then even the lower one will be highlighted as local.
+              ;; This is because the alist uses interned symbols, and the same symbol has only one 'face property.
               (or (keymapp bndg)
                   (and (commandp bndg)
                        (equal bndg (key-binding (vconcat icicle-key-prefix-2 (vector event)) nil 'NO-REMAP))
@@ -9151,7 +9178,7 @@ completions are found for PREFIX."
                  (if (and (stringp mitem)  (keymapp bndg))
                      (put candidate 'icicle-special-candidate '(face icicle-key-complete-menu-local))
                    (put candidate 'icicle-special-candidate t)))))
-            ((and (integerp event)  (generic-char-p event) ; Insert generic char (Emacs 22).
+            ((and (integerp event)  (fboundp 'generic-char-p)  (generic-char-p event) ; Insert generic char (Emacs 22).
                   (eq 'self-insert-command bndg))
              (ignore)))))               ; Placeholder for future use.
 

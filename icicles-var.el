@@ -4,11 +4,11 @@
 ;; Description: Internal variables for Icicles
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 1996-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 1996-2020, Drew Adams, all rights reserved.
 ;; Created: Mon Feb 27 09:23:26 2006
-;; Last-Updated: Tue Feb 13 14:18:30 2018 (-0800)
+;; Last-Updated: Sat Dec  5 10:03:14 2020 (-0800)
 ;;           By: dradams
-;;     Update #: 1888
+;;     Update #: 1898
 ;; URL: https://www.emacswiki.org/emacs/download/icicles-var.el
 ;; Doc URL: https://www.emacswiki.org/emacs/Icicles
 ;; Keywords: internal, extensions, help, abbrev, local, minibuffer,
@@ -17,15 +17,23 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;   `apropos', `apropos+', `apropos-fn+var', `avoid', `bookmark',
-;;   `bookmark+', `bookmark+-1', `bookmark+-bmu', `bookmark+-key',
-;;   `bookmark+-lit', `cl', `cus-theme', `el-swank-fuzzy', `ffap',
-;;   `ffap-', `fit-frame', `frame-fns', `fuzzy', `fuzzy-match',
-;;   `help+20', `hexrgb', `icicles-opt', `info', `info+20', `kmacro',
-;;   `levenshtein', `menu-bar', `menu-bar+', `misc-cmds', `misc-fns',
-;;   `naked', `package', `pp', `pp+', `second-sel', `strings',
-;;   `thingatpt', `thingatpt+', `unaccent', `w32browser-dlgopen',
-;;   `wid-edit', `wid-edit+', `widget'.
+;;   `apropos', `apropos+', `apropos-fn+var', `auth-source', `avoid',
+;;   `backquote', `bookmark', `bookmark+', `bookmark+-1',
+;;   `bookmark+-bmu', `bookmark+-key', `bookmark+-lit', `button',
+;;   `bytecomp', `cconv', `cl', `cl-generic', `cl-lib', `cl-macs',
+;;   `cmds-menu', `col-highlight', `crosshairs', `cus-edit',
+;;   `cus-face', `cus-load', `cus-start', `cus-theme', `eieio',
+;;   `eieio-core', `eieio-loaddefs', `el-swank-fuzzy', `epg-config',
+;;   `ffap', `ffap-', `fit-frame', `font-lock', `font-lock+',
+;;   `frame-fns', `fuzzy', `fuzzy-match', `gv', `help+', `help-fns',
+;;   `help-fns+', `help-macro', `help-macro+', `help-mode', `hexrgb',
+;;   `hl-line', `hl-line+', `icicles-opt', `info', `info+', `kmacro',
+;;   `levenshtein', `macroexp', `menu-bar', `menu-bar+', `misc-cmds',
+;;   `misc-fns', `naked', `package', `password-cache', `pp', `pp+',
+;;   `radix-tree', `replace', `second-sel', `seq', `strings',
+;;   `syntax', `tabulated-list', `text-mode', `thingatpt',
+;;   `thingatpt+', `url-handlers', `url-parse', `url-vars', `vline',
+;;   `w32browser-dlgopen', `wid-edit', `wid-edit+', `widget'.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -49,12 +57,11 @@
 ;;    `icicle-bookmark-history', `icicle-bookmark-list-names-only-p',
 ;;    `icicle-bookmark-types', `icicle-buffer-complete-fn',
 ;;    `icicle-buffer-config-history', `icicle-buffer-name-input-p',
-;;    `icicle-buffer-sort-first-time-p', `icicle-bufflist',
-;;    `icicle-candidate-action-fn', `icicle-candidate-alt-action-fn',
-;;    `icicle-candidate-entry-fn', `icicle-candidate-help-fn',
-;;    `icicle-candidate-nb', `icicle-candidate-properties-alist',
-;;    `icicle-candidates-alist', `icicle-cands-to-narrow',
-;;    `icicle-char-property-value-history',
+;;    `icicle-bufflist', `icicle-candidate-action-fn',
+;;    `icicle-candidate-alt-action-fn', `icicle-candidate-entry-fn',
+;;    `icicle-candidate-help-fn', `icicle-candidate-nb',
+;;    `icicle-candidate-properties-alist', `icicle-candidates-alist',
+;;    `icicle-cands-to-narrow', `icicle-char-property-value-history',
 ;;    `icicle-cmd-calling-for-completion', `icicle-cmd-reading-input',
 ;;    `icicle-color-history', `icicle-color-theme-history',
 ;;    `icicle-command-abbrev-history', `icicle-commands-for-abbrev',
@@ -84,7 +91,6 @@
 ;;    `icicle-face-remapping-region', `icicle-fancy-candidates-p',
 ;;    `icicle-fancy-cands-internal-p',
 ;;    `icicle-file-name-completion-table' (Emacs 24+),
-;;    `icicle-file-sort-first-time-p',
 ;;    `icicle-filtered-default-value', `icicle-font-name-history',
 ;;    `icicle-frame-alist', `icicle-frame-name-history',
 ;;    `icicle-full-cand-fn', `icicle-function-name-history',
@@ -331,8 +337,9 @@ If the value is nil then:
 (defvar icicle-buffer-name-input-p nil
   "Non-nil means we are reading a buffer name.")
 
-(defvar icicle-buffer-sort-first-time-p t
-  "Non-nil means buffer-name completion has not yet been used.")
+;;; $$$$
+;;; (defvar icicle-buffer-sort-first-time-p t
+;;;   "Non-nil means buffer-name completion has not yet been used.")
 
 (defvar icicle-bufflist 'icicle-bufflist--NOT-A-LIST
   "List of buffers used as completion candidates for `icicle-read-buffer'.
@@ -614,8 +621,9 @@ Do not set or bind this.  This is bound only by `completing-read'.")
                               #'completion-file-name-table)
     "Completion table used for file-name completion."))
 
-(defvar icicle-file-sort-first-time-p t
-  "Non-nil means file-name completion has not yet been used.")
+;;; $$$$
+;;; (defvar icicle-file-sort-first-time-p t
+;;;   "Non-nil means file-name completion has not yet been used.")
 
 (defvar icicle-filtered-default-value nil
   "Minibuffer default value, after filtering with `icicle-filter-wo-input'.")
@@ -879,7 +887,7 @@ Any function that reads from the minibuffer and accepts a default
 value or initial value should, before reading, put that value in
 `icicle-initial-value'.  For example, `completing-read' does that.
 
-In addition, `completing-read' and `read-file-name' will respect this
+In addition, `completing-read' and `read-file-name' respect this
 value, using it as the initial value if none is provided explicitly.
 This means that you can bind `icicle-initial-value' around an
 expression that calls `completing-read' or `read-file-name', and the
@@ -1212,8 +1220,22 @@ Depending on the value of option
 `icicle-unpropertize-completion-result-flag', it may also remove all
 text properties.")
 
-;; Same as `directory-files-no-dot-files-regexp' in `files.el', available for Emacs 23+.
-(defconst icicle-re-no-dot "^\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*"
+;; 2020-12-05.
+;;
+;; This was previously "^\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*".  Changed to be the same as
+;; `directory-files-no-dot-files-regexp' in `files.el', available for Emacs 23+, but changed in
+;; Emacs 27+ to this value.  This value is a bit quicker than the previous value, and it can
+;; match file names containing ^J.
+;;
+;; This value is OK, as long as no use is made of the match data.  In particular, as long as
+;; the match data is not used to capture the file name.  That's the case (it's OK) for use by
+;; `directory-files', which is currently the only use here.
+;;
+;; See https://lists.gnu.org/archive/html/emacs-devel/2020-04/msg00764.html, msg01247, msg01305
+;;
+;; Same as the default value of `diredp-re-no-dot' in `dired+.el'.
+;;
+(defconst icicle-re-no-dot "[^.]\\|\\.\\.\\."
   "Regexp that matches anything except `.' and `..'.")
 
 (defvar icicle-require-match-p nil

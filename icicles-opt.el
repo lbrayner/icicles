@@ -4,11 +4,11 @@
 ;; Description: User options (customizable variables) for Icicles
 ;; Author: Drew Adams
 ;; Maintainer: Drew Adams (concat "drew.adams" "@" "oracle" ".com")
-;; Copyright (C) 1996-2018, Drew Adams, all rights reserved.
+;; Copyright (C) 1996-2020, Drew Adams, all rights reserved.
 ;; Created: Mon Feb 27 09:22:14 2006
-;; Last-Updated: Fri Mar  2 08:47:25 2018 (-0800)
+;; Last-Updated: Fri Jan  3 10:41:30 2020 (-0800)
 ;;           By: dradams
-;;     Update #: 6229
+;;     Update #: 6234
 ;; URL: https://www.emacswiki.org/emacs/download/icicles-opt.el
 ;; Doc URL: https://www.emacswiki.org/emacs/Icicles
 ;; Keywords: internal, extensions, help, abbrev, local, minibuffer,
@@ -17,15 +17,23 @@
 ;;
 ;; Features that might be required by this library:
 ;;
-;;   `apropos', `apropos+', `avoid', `bookmark', `bookmark+',
-;;   `bookmark+-1', `bookmark+-bmu', `bookmark+-key',
-;;   `bookmark+-lit', `cl', `cus-theme', `el-swank-fuzzy', `ffap',
-;;   `ffap-', `fit-frame', `frame-fns', `fuzzy', `fuzzy-match',
-;;   `help+20', `hexrgb', `info', `info+20', `kmacro', `levenshtein',
-;;   `menu-bar', `menu-bar+', `misc-cmds', `misc-fns', `naked',
-;;   `package', `pp', `pp+', `second-sel', `strings', `thingatpt',
-;;   `thingatpt+', `unaccent', `w32browser-dlgopen', `wid-edit',
-;;   `wid-edit+', `widget'.
+;;   `apropos', `apropos+', `auth-source', `avoid', `backquote',
+;;   `bookmark', `bookmark+', `bookmark+-1', `bookmark+-bmu',
+;;   `bookmark+-key', `bookmark+-lit', `button', `bytecomp', `cconv',
+;;   `cl', `cl-generic', `cl-lib', `cl-macs', `cmds-menu',
+;;   `col-highlight', `crosshairs', `cus-edit', `cus-face',
+;;   `cus-load', `cus-start', `cus-theme', `eieio', `eieio-core',
+;;   `eieio-loaddefs', `el-swank-fuzzy', `epg-config', `ffap',
+;;   `ffap-', `fit-frame', `font-lock', `font-lock+', `frame-fns',
+;;   `fuzzy', `fuzzy-match', `gv', `help+', `help-fns', `help-fns+',
+;;   `help-macro', `help-macro+', `help-mode', `hexrgb', `hl-line',
+;;   `hl-line+', `info', `info+', `kmacro', `levenshtein',
+;;   `macroexp', `menu-bar', `menu-bar+', `misc-cmds', `misc-fns',
+;;   `naked', `package', `password-cache', `pp', `pp+', `radix-tree',
+;;   `replace', `second-sel', `seq', `strings', `syntax',
+;;   `tabulated-list', `text-mode', `thingatpt', `thingatpt+',
+;;   `url-handlers', `url-parse', `url-vars', `vline',
+;;   `w32browser-dlgopen', `wid-edit', `wid-edit+', `widget'.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -2453,6 +2461,9 @@ Example selectable menu-item element:
     "*Initial height decrease for text in buffer `*Completions*'.
 A value of 0.0 means the height is not decreased at all.
 This is used as the argument to function `text-scale-decrease'.
+
+This option has no effect for terminal Emacs.  It is used only for
+graphic display (GUI Emacs).
 
 If you use library Do Re Mi (library `doremi.el') then you can use
 `C-x -' to incrementally resize the text during completion.
@@ -5440,9 +5451,9 @@ Remember that you can use multi-command `icicle-toggle-option' anytime
      icicle-help-line-buffer  icicle-kill-a-buffer  insert-buffer  insert-buffer-substring
      insert-buffer-substring-as-yank  insert-buffer-substring-no-properties  kill-buffer
      kill-buffer-and-its-windows  kill-buffer-if-not-modified  last-buffer
-     multi-window-frames-on  other-buffer  pop-to-buffer  pr-interface  remove-windows-on
-     replace-buffer-in-windows  smiley-buffer  switch-to-buffer  switch-to-buffer-other-frame
-     switch-to-buffer-other-window  view-buffer  view-buffer-other-frame
+     multi-window-frames-on  other-buffer  pop-to-buffer  pop-to-buffer-same-window  pr-interface
+     remove-windows-on  replace-buffer-in-windows  smiley-buffer  switch-to-buffer
+     switch-to-buffer-other-frame  switch-to-buffer-other-window  view-buffer  view-buffer-other-frame
      view-buffer-other-window)
     ("color"
      color-defined-p  color-gray-p  color-supported-p  color-values  colors
